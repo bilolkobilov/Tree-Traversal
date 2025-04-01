@@ -1,8 +1,5 @@
 # 🌳 Tree Traversal Master - Advanced Tree Visualization Tool
 
-![Tree Traversal Master Screenshot](https://via.placeholder.com/800x500/1e293b/ffffff?text=Tree+Traversal+Master)  
-*(Replace with actual screenshot of your application)*
-
 ## 🚀 Overview
 
 Tree Traversal Master is an interactive web application designed to visualize, analyze, and manipulate tree data structures with professional-grade features. This powerful tool combines elegant visualization with comprehensive tree algorithms to help developers, computer science students, and educators understand tree structures and their traversal methods.
