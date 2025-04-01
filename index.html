@@ -299,6 +299,10 @@
             border-color: var(--light);
         }
 
+        .confirmation-modal .modal-footer {
+            justify-content: space-between;
+        }
+
         @media (prefers-reduced-motion: reduce) {
             * {
                 animation-duration: 0.01ms !important;
@@ -323,6 +327,40 @@
             </div>
             <div class="modal-footer">
                 <button class="modal-btn modal-btn-primary" id="modal-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal Structure -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 class="modal-title" id="confirmation-modal-title">Confirm Action</h2>
+                <button class="close-modal" id="close-confirmation-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="confirmation-modal-body">
+                Are you sure you want to perform this action?
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="confirmation-modal-cancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="confirmation-modal-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Prompt Modal Structure -->
+    <div id="prompt-modal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 class="modal-title" id="prompt-modal-title">Enter Value</h2>
+                <button class="close-modal" id="close-prompt-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="prompt-input" class="w-full p-3 bg-gray-800 rounded-lg text-white border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 input-highlight" placeholder="Enter value">
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-secondary" id="prompt-modal-cancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="prompt-modal-confirm">OK</button>
             </div>
         </div>
     </div>
@@ -768,7 +806,9 @@ B: D, E"></textarea>
             statsChart: null,
             traversalInterval: null,
             cachedElements: {},
-            nodeCounter: 1
+            nodeCounter: 1,
+            modalResolve: null,
+            modalReject: null
         };
 
         // DOM Elements Cache
@@ -778,7 +818,11 @@ B: D, E"></textarea>
             'minValue', 'maxValue', 'sumValues', 'avgValue',
             'treeStatsChart', 'inputMethod', 'fileName',
             'inputPanel', 'operationsPanel', 'inputTabBtn', 'operationsTabBtn',
-            'modal', 'modal-title', 'modal-body', 'modal-confirm', 'close-modal'
+            'modal', 'modal-title', 'modal-body', 'modal-confirm', 'close-modal',
+            'confirmation-modal', 'confirmation-modal-title', 'confirmation-modal-body', 
+            'confirmation-modal-confirm', 'confirmation-modal-cancel', 'close-confirmation-modal',
+            'prompt-modal', 'prompt-modal-title', 'prompt-input', 
+            'prompt-modal-confirm', 'prompt-modal-cancel', 'close-prompt-modal'
         ];
 
         // Initialize the application
@@ -787,13 +831,14 @@ B: D, E"></textarea>
             initializeEventListeners();
             initStatsChart();
             initializeEmptyTree();
-            setupModal();
+            setupModals();
         });
 
         /**
          * Sets up the modal functionality
          */
-        function setupModal() {
+        function setupModals() {
+            // Info modal
             const modal = appState.cachedElements.modal;
             const closeModal = appState.cachedElements['close-modal'];
             const confirmBtn = appState.cachedElements['modal-confirm'];
@@ -804,11 +849,83 @@ B: D, E"></textarea>
 
             confirmBtn.addEventListener('click', () => {
                 modal.style.display = 'none';
+                if (appState.modalResolve) appState.modalResolve();
             });
 
             window.addEventListener('click', (e) => {
                 if (e.target === modal) {
                     modal.style.display = 'none';
+                    if (appState.modalReject) appState.modalReject(new Error('Modal closed by clicking outside'));
+                }
+            });
+
+            // Confirmation modal
+            const confirmationModal = appState.cachedElements['confirmation-modal'];
+            const closeConfirmationModal = appState.cachedElements['close-confirmation-modal'];
+            const confirmConfirmationBtn = appState.cachedElements['confirmation-modal-confirm'];
+            const cancelConfirmationBtn = appState.cachedElements['confirmation-modal-cancel'];
+
+            closeConfirmationModal.addEventListener('click', () => {
+                confirmationModal.style.display = 'none';
+                if (appState.modalReject) appState.modalReject(new Error('Modal closed by button'));
+            });
+
+            confirmConfirmationBtn.addEventListener('click', () => {
+                confirmationModal.style.display = 'none';
+                if (appState.modalResolve) appState.modalResolve(true);
+            });
+
+            cancelConfirmationBtn.addEventListener('click', () => {
+                confirmationModal.style.display = 'none';
+                if (appState.modalResolve) appState.modalResolve(false);
+            });
+
+            window.addEventListener('click', (e) => {
+                if (e.target === confirmationModal) {
+                    confirmationModal.style.display = 'none';
+                    if (appState.modalReject) appState.modalReject(new Error('Modal closed by clicking outside'));
+                }
+            });
+
+            // Prompt modal
+            const promptModal = appState.cachedElements['prompt-modal'];
+            const closePromptModal = appState.cachedElements['close-prompt-modal'];
+            const confirmPromptBtn = appState.cachedElements['prompt-modal-confirm'];
+            const cancelPromptBtn = appState.cachedElements['prompt-modal-cancel'];
+            const promptInput = appState.cachedElements['prompt-input'];
+
+            closePromptModal.addEventListener('click', () => {
+                promptModal.style.display = 'none';
+                if (appState.modalReject) appState.modalReject(new Error('Modal closed by button'));
+            });
+
+            confirmPromptBtn.addEventListener('click', () => {
+                const value = promptInput.value;
+                promptModal.style.display = 'none';
+                promptInput.value = '';
+                if (appState.modalResolve) appState.modalResolve(value);
+            });
+
+            cancelPromptBtn.addEventListener('click', () => {
+                promptModal.style.display = 'none';
+                promptInput.value = '';
+                if (appState.modalReject) appState.modalReject(new Error('Prompt cancelled'));
+            });
+
+            promptInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    const value = promptInput.value;
+                    promptModal.style.display = 'none';
+                    promptInput.value = '';
+                    if (appState.modalResolve) appState.modalResolve(value);
+                }
+            });
+
+            window.addEventListener('click', (e) => {
+                if (e.target === promptModal) {
+                    promptModal.style.display = 'none';
+                    promptInput.value = '';
+                    if (appState.modalReject) appState.modalReject(new Error('Modal closed by clicking outside'));
                 }
             });
         }
@@ -822,6 +939,45 @@ B: D, E"></textarea>
             appState.cachedElements['modal-title'].textContent = title;
             appState.cachedElements['modal-body'].innerHTML = message;
             appState.cachedElements.modal.style.display = 'flex';
+            
+            return new Promise((resolve) => {
+                appState.modalResolve = resolve;
+            });
+        }
+
+        /**
+         * Shows a confirmation dialog
+         * @param {string} title - Modal title
+         * @param {string} message - Confirmation message
+         * @returns {Promise<boolean>} Promise that resolves to true if confirmed, false if cancelled
+         */
+        function showConfirmation(title, message) {
+            appState.cachedElements['confirmation-modal-title'].textContent = title;
+            appState.cachedElements['confirmation-modal-body'].innerHTML = message;
+            appState.cachedElements['confirmation-modal'].style.display = 'flex';
+            
+            return new Promise((resolve, reject) => {
+                appState.modalResolve = resolve;
+                appState.modalReject = reject;
+            });
+        }
+
+        /**
+         * Shows a prompt dialog
+         * @param {string} title - Modal title
+         * @param {string} placeholder - Input placeholder text
+         * @returns {Promise<string>} Promise that resolves to the entered value or rejects if cancelled
+         */
+        function showPrompt(title, placeholder = '') {
+            appState.cachedElements['prompt-modal-title'].textContent = title;
+            appState.cachedElements['prompt-input'].placeholder = placeholder;
+            appState.cachedElements['prompt-modal'].style.display = 'flex';
+            appState.cachedElements['prompt-input'].focus();
+            
+            return new Promise((resolve, reject) => {
+                appState.modalResolve = resolve;
+                appState.modalReject = reject;
+            });
         }
 
         /**
@@ -1062,20 +1218,21 @@ B: D, E"></textarea>
                     ...options,
                     manipulation: {
                         addNode: (data, callback) => {
-                            const nodeValue = prompt('Enter node value:', `Node${appState.nodeCounter}`);
-                            if (nodeValue === null) return;
-
-                            data.label = nodeValue || `Node${appState.nodeCounter}`;
-                            data.color = {
-                                background: '#ed8936',
-                                border: '#dd6b20',
-                                highlight: {
-                                    background: '#f56565',
-                                    border: '#e53e3e'
-                                }
-                            };
-                            callback(data);
-                            appState.nodeCounter++;
+                            showPrompt('Enter node value', `Node${appState.nodeCounter}`)
+                                .then(nodeValue => {
+                                    data.label = nodeValue || `Node${appState.nodeCounter}`;
+                                    data.color = {
+                                        background: '#ed8936',
+                                        border: '#dd6b20',
+                                        highlight: {
+                                            background: '#f56565',
+                                            border: '#e53e3e'
+                                        }
+                                    };
+                                    callback(data);
+                                    appState.nodeCounter++;
+                                })
+                                .catch(() => {});
                         },
                         addEdge: (data, callback) => {
                             if (data.from === data.to) {
@@ -1085,16 +1242,21 @@ B: D, E"></textarea>
                             callback(data);
                         },
                         editNode: (data, callback) => {
-                            const newValue = prompt('Enter new node value:', data.label);
-                            if (newValue === null) return;
-
-                            data.label = newValue || data.label;
-                            callback(data);
+                            showPrompt('Enter new node value', data.label)
+                                .then(newValue => {
+                                    data.label = newValue || data.label;
+                                    callback(data);
+                                })
+                                .catch(() => {});
                         },
                         deleteNode: (data, callback) => {
-                            if (confirm("Delete this node and all its descendants?")) {
-                                callback(data);
-                            }
+                            showConfirmation('Delete Node', 'Delete this node and all its descendants?')
+                                .then(confirmed => {
+                                    if (confirmed) {
+                                        callback(data);
+                                    }
+                                })
+                                .catch(() => {});
                         }
                     }
                 }
@@ -1105,47 +1267,51 @@ B: D, E"></textarea>
                 if (params.nodes.length === 1) {
                     const nodeId = params.nodes[0];
                     const newNodeId = `Node${appState.nodeCounter}`;
-                    const nodeValue = prompt('Enter node value:', newNodeId);
-                    if (nodeValue === null) return;
+                    
+                    showPrompt('Enter node value', newNodeId)
+                        .then(nodeValue => {
+                            appState.network.body.data.nodes.add({
+                                id: newNodeId,
+                                label: nodeValue || newNodeId,
+                                color: {
+                                    background: '#ed8936',
+                                    border: '#dd6b20',
+                                    highlight: {
+                                        background: '#f56565',
+                                        border: '#e53e3e'
+                                    }
+                                }
+                            });
 
-                    appState.network.body.data.nodes.add({
-                        id: newNodeId,
-                        label: nodeValue || newNodeId,
-                        color: {
-                            background: '#ed8936',
-                            border: '#dd6b20',
-                            highlight: {
-                                background: '#f56565',
-                                border: '#e53e3e'
-                            }
-                        }
-                    });
+                            appState.network.body.data.edges.add({
+                                from: nodeId,
+                                to: newNodeId
+                            });
 
-                    appState.network.body.data.edges.add({
-                        from: nodeId,
-                        to: newNodeId
-                    });
-
-                    appState.nodeCounter++;
+                            appState.nodeCounter++;
+                        })
+                        .catch(() => {});
                 } else if (params.nodes.length === 0) {
                     const newNodeId = `Node${appState.nodeCounter}`;
-                    const nodeValue = prompt('Enter node value:', newNodeId);
-                    if (nodeValue === null) return;
+                    
+                    showPrompt('Enter node value', newNodeId)
+                        .then(nodeValue => {
+                            appState.network.body.data.nodes.add({
+                                id: newNodeId,
+                                label: nodeValue || newNodeId,
+                                color: {
+                                    background: '#ed8936',
+                                    border: '#dd6b20',
+                                    highlight: {
+                                        background: '#f56565',
+                                        border: '#e53e3e'
+                                    }
+                                }
+                            });
 
-                    appState.network.body.data.nodes.add({
-                        id: newNodeId,
-                        label: nodeValue || newNodeId,
-                        color: {
-                            background: '#ed8936',
-                            border: '#dd6b20',
-                            highlight: {
-                                background: '#f56565',
-                                border: '#e53e3e'
-                            }
-                        }
-                    });
-
-                    appState.nodeCounter++;
+                            appState.nodeCounter++;
+                        })
+                        .catch(() => {});
                 }
             });
 
@@ -1165,92 +1331,112 @@ B: D, E"></textarea>
             if (!appState.network) return;
 
             const newNodeId = `Node${appState.nodeCounter}`;
-            const nodeValue = prompt('Enter node value:', newNodeId);
-            if (nodeValue === null) return;
+            
+            showPrompt('Enter node value', newNodeId)
+                .then(nodeValue => {
+                    appState.network.body.data.nodes.add({
+                        id: newNodeId,
+                        label: nodeValue || newNodeId,
+                        color: {
+                            background: '#ed8936',
+                            border: '#dd6b20',
+                            highlight: {
+                                background: '#f56565',
+                                border: '#e53e3e'
+                            }
+                        }
+                    });
 
-            appState.network.body.data.nodes.add({
-                id: newNodeId,
-                label: nodeValue || newNodeId,
-                color: {
-                    background: '#ed8936',
-                    border: '#dd6b20',
-                    highlight: {
-                        background: '#f56565',
-                        border: '#e53e3e'
-                    }
-                }
-            });
+                    // Position the new node near the center
+                    const viewPosition = appState.network.getViewPosition();
+                    appState.network.body.data.nodes.update({
+                        id: newNodeId,
+                        x: viewPosition.x,
+                        y: viewPosition.y
+                    });
 
-            // Position the new node near the center
-            const viewPosition = appState.network.getViewPosition();
-            appState.network.body.data.nodes.update({
-                id: newNodeId,
-                x: viewPosition.x,
-                y: viewPosition.y
-            });
-
-            appState.nodeCounter++;
+                    appState.nodeCounter++;
+                })
+                .catch(() => {});
         }
 
         /**
          * Adds an edge to the graphical builder
          */
-        function addEdgeToBuilder() {
+        async function addEdgeToBuilder() {
             if (!appState.network) return;
 
-            const fromNode = prompt("Enter source node ID:");
-            const toNode = prompt("Enter target node ID:");
-
-            if (!fromNode || !toNode) {
-                showModal('Missing Information', 'Please enter both source and target node IDs');
-                return;
-            }
-
-            if (fromNode === toNode) {
-                showModal('Invalid Edge', 'Cannot create self-loops in trees');
-                return;
-            }
-
-            if (!appState.network.body.data.nodes.get(fromNode) || !appState.network.body.data.nodes.get(toNode)) {
-                showModal('Invalid Nodes', 'One or both nodes do not exist');
-                return;
-            }
-
             try {
-                appState.network.body.data.edges.add({
-                    from: fromNode,
-                    to: toNode
-                });
+                const fromNode = await showPrompt("Enter source node ID:");
+                const toNode = await showPrompt("Enter target node ID:");
+
+                if (!fromNode || !toNode) {
+                    showModal('Missing Information', 'Please enter both source and target node IDs');
+                    return;
+                }
+
+                if (fromNode === toNode) {
+                    showModal('Invalid Edge', 'Cannot create self-loops in trees');
+                    return;
+                }
+
+                if (!appState.network.body.data.nodes.get(fromNode) || !appState.network.body.data.nodes.get(toNode)) {
+                    showModal('Invalid Nodes', 'One or both nodes do not exist');
+                    return;
+                }
+
+                try {
+                    appState.network.body.data.edges.add({
+                        from: fromNode,
+                        to: toNode
+                    });
+                } catch (e) {
+                    showModal('Error', 'Failed to create edge: ' + e.message);
+                }
             } catch (e) {
-                showModal('Error', 'Failed to create edge: ' + e.message);
+                // User cancelled the prompt
             }
         }
 
         /**
          * Resets the graphical builder
          */
-        function resetGraphBuilder() {
+        async function resetGraphBuilder() {
             if (!appState.network) return;
 
-            if (confirm("Are you sure you want to reset the graph builder? This will remove all nodes and edges.")) {
-                appState.network.body.data.nodes.clear();
-                appState.network.body.data.edges.clear();
-                appState.nodeCounter = 1;
-                addHistory('Graph builder was reset');
+            try {
+                const confirmed = await showConfirmation("Reset Graph Builder", 
+                    "Are you sure you want to reset the graph builder? This will remove all nodes and edges.");
+                
+                if (confirmed) {
+                    appState.network.body.data.nodes.clear();
+                    appState.network.body.data.edges.clear();
+                    appState.nodeCounter = 1;
+                    addHistory('Graph builder was reset');
+                }
+            } catch (e) {
+                // User cancelled the confirmation
             }
         }
 
         /**
          * Resets the main tree visualization
          */
-        function resetTree() {
-            if (confirm("Are you sure you want to reset the tree? This will remove all nodes and edges.")) {
-                appState.adjList = {};
-                appState.network.body.data.nodes.clear();
-                appState.network.body.data.edges.clear();
-                appState.nodeCounter = 1;
-                updateTreeInfo();
-                addHistory('Tree was reset');
+        async function resetTree() {
+            try {
+                const confirmed = await showConfirmation("Reset Tree", 
+                    "Are you sure you want to reset the tree? This will remove all nodes and edges.");
+                
+                if (confirmed) {
+                    appState.adjList = {};
+                    appState.network.body.data.nodes.clear();
+                    appState.network.body.data.edges.clear();
+                    appState.nodeCounter = 1;
+                    updateTreeInfo();
+                    addHistory('Tree was reset');
+                }
+            } catch (e) {
+                // User cancelled the confirmation
             }
         }
 
@@ -1980,20 +2166,24 @@ B: D, E"></textarea>
         /**
          * Calculates and displays the depth of a node
          */
-        function calculateDepth() {
-            const node = prompt("Enter node to find depth:", Object.keys(appState.adjList)[0]);
-            if (!node || !appState.network.body.data.nodes.get(node)) {
-                showModal('Error', 'Invalid node');
-                return;
-            }
+        async function calculateDepth() {
+            try {
+                const node = await showPrompt("Node to find depth:", Object.keys(appState.adjList)[0]);
+                if (!node || !appState.network.body.data.nodes.get(node)) {
+                    showModal('Error', 'Invalid node');
+                    return;
+                }
 
-            const depth = getDepth(node);
-            appState.cachedElements.operationResult.innerHTML = `
-                <div class="font-bold text-teal-300 mb-1">NODE DEPTH</div>
-                <div>Depth of node ${node} is ${depth}</div>
-            `;
-            highlightNode(node);
-            addHistory(`Calculated depth of node ${node}: ${depth}`);
+                const depth = getDepth(node);
+                appState.cachedElements.operationResult.innerHTML = `
+                    <div class="font-bold text-teal-300 mb-1">NODE DEPTH</div>
+                    <div>Depth of node ${node} is ${depth}</div>
+                `;
+                highlightNode(node);
+                addHistory(`Calculated depth of node ${node}: ${depth}`);
+            } catch (e) {
+                // User cancelled the prompt
+            }
         }
 
         /**
@@ -2119,33 +2309,37 @@ B: D, E"></textarea>
         /**
          * Performs an AVL rotation
          */
-        function avlRotate() {
+        async function avlRotate() {
             if (!isBinaryTree()) {
                 showModal('Invalid Operation', 'Rotation is only valid for binary trees');
                 return;
             }
 
-            const node = prompt("Node to rotate around:", Object.keys(appState.adjList)[0]);
-            if (!node || !appState.network.body.data.nodes.get(node)) {
-                showModal('Error', 'Invalid node');
-                return;
+            try {
+                const node = await showPrompt("Node to rotate around:", Object.keys(appState.adjList)[0]);
+                if (!node || !appState.network.body.data.nodes.get(node)) {
+                    showModal('Error', 'Invalid node');
+                    return;
+                }
+
+                const type = await showPrompt("Rotation type (left/right):", "left");
+                if (!type || (type.toLowerCase() !== 'left' && type.toLowerCase() !== 'right')) {
+                    showModal('Error', 'Invalid rotation type');
+                    return;
+                }
+
+                if (type.toLowerCase() === 'left') leftRotate(node);
+                else if (type.toLowerCase() === 'right') rightRotate(node);
+
+                buildTreeVis();
+                appState.cachedElements.operationResult.innerHTML = `
+                    <div class="font-bold text-teal-300 mb-1">TREE ROTATION</div>
+                    <div>Performed ${type.toLowerCase()} rotation at node ${node}</div>
+                `;
+                addHistory(`Performed ${type.toLowerCase()} rotation at node ${node}`);
+            } catch (e) {
+                // User cancelled the prompt
             }
-
-            const type = prompt("Rotation type (left/right):", "left").toLowerCase();
-            if (type !== 'left' && type !== 'right') {
-                showModal('Error', 'Invalid rotation type');
-                return;
-            }
-
-            if (type === 'left') leftRotate(node);
-            else if (type === 'right') rightRotate(node);
-
-            buildTreeVis();
-            appState.cachedElements.operationResult.innerHTML = `
-                <div class="font-bold text-teal-300 mb-1">TREE ROTATION</div>
-                <div>Performed ${type} rotation at node ${node}</div>
-            `;
-            addHistory(`Performed ${type} rotation at node ${node}`);
         }
 
         /**
@@ -2234,22 +2428,26 @@ B: D, E"></textarea>
         /**
          * Prunes a subtree from the tree
          */
-        function pruneTree() {
-            const node = prompt("Enter node to prune (subtree will be removed):", Object.keys(appState.adjList)[0]);
-            if (!node || !appState.network.body.data.nodes.get(node)) {
-                showModal('Error', 'Invalid node');
-                return;
+        async function pruneTree() {
+            try {
+                const node = await showPrompt("Enter node to prune (subtree will be removed):", Object.keys(appState.adjList)[0]);
+                if (!node || !appState.network.body.data.nodes.get(node)) {
+                    showModal('Error', 'Invalid node');
+                    return;
+                }
+
+                // Remove the subtree
+                removeSubtree(node);
+
+                buildTreeVis();
+                appState.cachedElements.operationResult.innerHTML = `
+                    <div class="font-bold text-teal-300 mb-1">TREE PRUNED</div>
+                    <div>Subtree rooted at ${node} has been removed</div>
+                `;
+                addHistory(`Pruned subtree at node ${node}`);
+            } catch (e) {
+                // User cancelled the prompt
             }
-
-            // Remove the subtree
-            removeSubtree(node);
-
-            buildTreeVis();
-            appState.cachedElements.operationResult.innerHTML = `
-                <div class="font-bold text-teal-300 mb-1">TREE PRUNED</div>
-                <div>Subtree rooted at ${node} has been removed</div>
-            `;
-            addHistory(`Pruned subtree at node ${node}`);
         }
 
         /**
@@ -2275,28 +2473,32 @@ B: D, E"></textarea>
         /**
          * Calculates and displays the lowest common ancestor of two nodes
          */
-        function calculateLCA() {
-            const n1 = prompt("Enter first node:", Object.keys(appState.adjList)[0]);
-            const n2 = prompt("Enter second node:", Object.keys(appState.adjList)[1]);
+        async function calculateLCA() {
+            try {
+                const n1 = await showPrompt("Enter first node:", Object.keys(appState.adjList)[0]);
+                const n2 = await showPrompt("Enter second node:", Object.keys(appState.adjList)[1]);
 
-            if (!n1 || !n2 || !appState.network.body.data.nodes.get(n1) || !appState.network.body.data.nodes.get(n2)) {
-                showModal('Error', 'Invalid nodes');
-                return;
-            }
+                if (!n1 || !n2 || !appState.network.body.data.nodes.get(n1) || !appState.network.body.data.nodes.get(n2)) {
+                    showModal('Error', 'Invalid nodes');
+                    return;
+                }
 
-            const root = findRoot();
-            const lca = root ? findLCA(root, n1, n2) : null;
+                const root = findRoot();
+                const lca = root ? findLCA(root, n1, n2) : null;
 
-            appState.cachedElements.operationResult.innerHTML = `
-                <div class="font-bold text-teal-300 mb-1">LOWEST COMMON ANCESTOR</div>
-                <div>LCA(${n1}, ${n2}) = ${lca || 'Not found'}</div>
-            `;
+                appState.cachedElements.operationResult.innerHTML = `
+                    <div class="font-bold text-teal-300 mb-1">LOWEST COMMON ANCESTOR</div>
+                    <div>LCA(${n1}, ${n2}) = ${lca || 'Not found'}</div>
+                `;
 
-            if (lca) {
-                highlightNode(lca);
-                addHistory(`Found LCA of ${n1} and ${n2}: ${lca}`);
-            } else {
-                addHistory(`No LCA found for ${n1} and ${n2}`);
+                if (lca) {
+                    highlightNode(lca);
+                    addHistory(`Found LCA of ${n1} and ${n2}: ${lca}`);
+                } else {
+                    addHistory(`No LCA found for ${n1} and ${n2}`);
+                }
+            } catch (e) {
+                // User cancelled the prompt
             }
         }
 
@@ -2317,27 +2519,31 @@ B: D, E"></textarea>
         /**
          * Finds and displays the path between two nodes
          */
-        function findPath() {
-            const start = prompt("Enter start node:", Object.keys(appState.adjList)[0]);
-            const end = prompt("Enter end node:", Object.keys(appState.adjList)[1]);
+        async function findPath() {
+            try {
+                const start = await showPrompt("Enter start node:", Object.keys(appState.adjList)[0]);
+                const end = await showPrompt("Enter end node:", Object.keys(appState.adjList)[1]);
 
-            if (!start || !end || !appState.network.body.data.nodes.get(start) || !appState.network.body.data.nodes.get(end)) {
-                showModal('Error', 'Invalid nodes');
-                return;
-            }
+                if (!start || !end || !appState.network.body.data.nodes.get(start) || !appState.network.body.data.nodes.get(end)) {
+                    showModal('Error', 'Invalid nodes');
+                    return;
+                }
 
-            const path = findPathUtil(start, end);
+                const path = findPathUtil(start, end);
 
-            appState.cachedElements.operationResult.innerHTML = `
-                <div class="font-bold text-teal-300 mb-1">PATH BETWEEN NODES</div>
-                <div>Path from ${start} to ${end}: ${path.length > 0 ? path.join(' → ') : 'No path exists'}</div>
-            `;
+                appState.cachedElements.operationResult.innerHTML = `
+                    <div class="font-bold text-teal-300 mb-1">PATH BETWEEN NODES</div>
+                    <div>Path from ${start} to ${end}: ${path.length > 0 ? path.join(' → ') : 'No path exists'}</div>
+                `;
 
-            if (path.length > 0) {
-                animatePath(path);
-                addHistory(`Found path from ${start} to ${end}`);
-            } else {
-                addHistory(`No path found from ${start} to ${end}`);
+                if (path.length > 0) {
+                    animatePath(path);
+                    addHistory(`Found path from ${start} to ${end}`);
+                } else {
+                    addHistory(`No path found from ${start} to ${end}`);
+                }
+            } catch (e) {
+                // User cancelled the prompt
             }
         }
 
