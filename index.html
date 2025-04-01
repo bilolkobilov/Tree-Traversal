@@ -1,0 +1,2564 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tree Traversal Master | Advanced Calculator</title>
+    <script defer src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
+    <script defer
+        src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/standalone/umd/vis-network.min.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --primary-dark: #4f46e5;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --accent-light: #f472b6;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1e293b;
+            --darker: #0f172a;
+            --light: #f8fafc;
+            --gray: #94a3b8;
+            --gray-light: #e2e8f0;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--darker) 0%, var(--dark) 100%);
+            min-height: 100vh;
+            color: var(--light);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+            transition: all 0.3s ease;
+        }
+
+        .glass-effect:hover {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-gradient {
+            background: linear-gradient(45deg, var(--primary), var(--accent));
+            background-size: 200% 200%;
+            transition: background-position 0.5s ease;
+        }
+
+        .btn-gradient:hover {
+            background-position: 100% 100%;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+        }
+
+        .btn:hover::after {
+            transform: translateY(0);
+        }
+
+        .highlight-node {
+            animation: pulse 1s ease-in-out;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .traversal-path {
+            stroke-width: 3px;
+            stroke-dasharray: 5, 5;
+            animation: dash 1s linear infinite;
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -10;
+            }
+        }
+
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark);
+            color: var(--light);
+            text-align: center;
+            border-radius: 8px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translate(-50%, 5px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 0.8rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .tab-active {
+            background: rgba(255, 255, 255, 0.15);
+            border-bottom: 3px solid var(--accent);
+            font-weight: 500;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 160px;
+            width: 100%;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .input-highlight {
+            transition: all 0.3s ease;
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .input-highlight:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent-light);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--gray);
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: var(--light);
+        }
+
+        .modal-body {
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .modal-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .modal-btn-primary {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+        }
+
+        .modal-btn-primary:hover {
+            background-color: var(--primary-dark);
+        }
+
+        .modal-btn-secondary {
+            background-color: transparent;
+            color: var(--gray);
+            border: 1px solid var(--gray);
+        }
+
+        .modal-btn-secondary:hover {
+            color: var(--light);
+            border-color: var(--light);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="font-sans antialiased">
+    <!-- Modal Structure -->
+    <div id="modal" class="modal">
+        <div class="modal-content glass-effect">
+            <div class="modal-header">
+                <h2 class="modal-title" id="modal-title">Modal Title</h2>
+                <button class="close-modal" id="close-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body">
+                Modal content goes here
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" id="modal-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mx-auto px-4 py-8">
+        <header class="flex flex-col items-center mb-10">
+            <h1
+                class="text-5xl font-extrabold text-center mb-3 bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-500 to-rose-500">
+                Tree Traversal Master
+            </h1>
+            <p class="text-gray-400 text-center max-w-2xl">Visualize and understand tree structures with interactive
+                tools and multiple input methods</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <!-- Input Panel -->
+            <div class="lg:col-span-1 glass-effect p-6 rounded-2xl">
+                <div class="flex mb-5 border-b border-gray-700">
+                    <button id="inputTabBtn"
+                        class="tab-active px-4 py-3 text-sm font-medium text-white focus:outline-none transition-colors duration-200">
+                        <i class="fas fa-keyboard mr-2"></i>Input
+                    </button>
+                    <button id="operationsTabBtn"
+                        class="px-4 py-3 text-sm font-medium text-gray-400 hover:text-white focus:outline-none transition-colors duration-200">
+                        <i class="fas fa-cogs mr-2"></i>Operations
+                    </button>
+                </div>
+
+                <div id="inputPanel" class="space-y-5">
+                    <h2 class="text-xl font-bold text-yellow-300 flex items-center">
+                        <i class="fas fa-tree mr-3"></i> Tree Input
+                    </h2>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Input Method</label>
+                        <select id="inputMethod"
+                            class="w-full p-3 bg-gray-800 rounded-lg text-white border border-gray-700 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 input-highlight">
+                            <option value="simple">Simple Builder</option>
+                            <option value="manual">Text Input</option>
+                            <option value="graphical">Graphical Builder</option>
+                            <option value="sample">Sample Trees</option>
+                        </select>
+                    </div>
+
+                    <!-- Simple Builder Input -->
+                    <div id="simpleInput" class="space-y-4">
+                        <div class="bg-gray-800 rounded-lg p-4">
+                            <h3 class="text-md font-semibold text-blue-300 mb-3">Build Your Tree Step by Step</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-1">Root Node Value</label>
+                                    <input type="text" id="rootNodeValue"
+                                        class="w-full p-2 bg-gray-700 rounded-lg text-white border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        placeholder="Enter root value">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-1">Add Child Nodes</label>
+                                    <div class="flex space-x-2">
+                                        <input type="text" id="childNodeValue"
+                                            class="flex-1 p-2 bg-gray-700 rounded-lg text-white border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                            placeholder="Child value">
+                                        <button onclick="addChildToRoot()"
+                                            class="btn bg-purple-600 hover:bg-purple-700 text-white px-3 rounded-lg">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="loadSimpleTree()"
+                            class="w-full btn btn-gradient text-white p-3 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-project-diagram mr-2"></i> Build Tree
+                        </button>
+                    </div>
+
+                    <!-- Manual Input -->
+                    <div id="manualInput" class="hidden space-y-4">
+                        <div class="bg-gray-800 rounded-lg p-4">
+                            <h3 class="text-md font-semibold text-blue-300 mb-3">Text Input Options</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-1">Parent-Child Pairs (one
+                                        per line)</label>
+                                    <textarea id="parentChildPairs"
+                                        class="w-full p-2 bg-gray-700 rounded-lg text-white border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        rows="4" placeholder="Parent: Child1, Child2
+A: B, C
+B: D, E"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-300 mb-1">Or JSON Format</label>
+                                    <textarea id="jsonInput"
+                                        class="w-full p-2 bg-gray-700 rounded-lg text-white border border-gray-600 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                        rows="4" placeholder='{"A": ["B", "C"], "B": ["D"]}'></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <button onclick="loadTreeFromText()"
+                            class="w-full btn btn-gradient text-white p-3 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-sync-alt mr-2"></i> Load Tree
+                        </button>
+                    </div>
+
+                    <!-- Graphical Builder -->
+                    <div id="graphicalInput" class="hidden space-y-4">
+                        <div class="bg-gray-800 rounded-lg p-3">
+                            <div id="graphBuilder" class="h-64 rounded-lg"></div>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="addNodeToBuilder()"
+                                class="flex-1 btn bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg">
+                                <i class="fas fa-plus-circle mr-2"></i> Add Node
+                            </button>
+                            <button onclick="addEdgeToBuilder()"
+                                class="flex-1 btn bg-gray-700 hover:bg-gray-600 text-white p-3 rounded-lg">
+                                <i class="fas fa-link mr-2"></i> Add Edge
+                            </button>
+                        </div>
+                        <div class="flex space-x-3">
+                            <button onclick="resetGraphBuilder()"
+                                class="flex-1 btn bg-red-600 hover:bg-red-700 text-white p-3 rounded-lg">
+                                <i class="fas fa-trash mr-2"></i> Reset
+                            </button>
+                            <button onclick="loadFromGraphical()"
+                                class="flex-1 btn btn-gradient text-white p-3 rounded-lg">
+                                <i class="fas fa-project-diagram mr-2"></i> Load Tree
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Sample Trees -->
+                    <div id="sampleInput" class="hidden space-y-3">
+                        <div class="bg-gray-800 rounded-lg p-4">
+                            <h3 class="text-md font-semibold text-blue-300 mb-3">Choose a Sample Tree</h3>
+                            <div class="space-y-2">
+                                <button onclick="loadSample('binary')"
+                                    class="w-full btn bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-3 rounded-lg flex items-center justify-between">
+                                    <span><i class="fas fa-binary mr-2"></i> Simple Binary</span>
+                                    <i class="fas fa-chevron-right text-sm"></i>
+                                </button>
+                                <button onclick="loadSample('nary')"
+                                    class="w-full btn bg-gradient-to-r from-purple-500 to-pink-600 text-white p-3 rounded-lg flex items-center justify-between">
+                                    <span><i class="fas fa-sitemap mr-2"></i> N-ary Tree</span>
+                                    <i class="fas fa-chevron-right text-sm"></i>
+                                </button>
+                                <button onclick="loadSample('avl')"
+                                    class="w-full btn bg-gradient-to-r from-green-500 to-teal-600 text-white p-3 rounded-lg flex items-center justify-between">
+                                    <span><i class="fas fa-balance-scale-right mr-2"></i> AVL Tree</span>
+                                    <i class="fas fa-chevron-right text-sm"></i>
+                                </button>
+                                <button onclick="loadSample('redblack')"
+                                    class="w-full btn bg-gradient-to-r from-red-500 to-rose-600 text-white p-3 rounded-lg flex items-center justify-between">
+                                    <span><i class="fas fa-square mr-2"></i> Red-Black Tree</span>
+                                    <i class="fas fa-chevron-right text-sm"></i>
+                                </button>
+                                <button onclick="loadSample('complete')"
+                                    class="w-full btn bg-gradient-to-r from-cyan-500 to-blue-600 text-white p-3 rounded-lg flex items-center justify-between">
+                                    <span><i class="fas fa-th-large mr-2"></i> Complete Binary</span>
+                                    <i class="fas fa-chevron-right text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="operationsPanel" class="hidden space-y-5">
+                    <h2 class="text-xl font-bold text-yellow-300 flex items-center">
+                        <i class="fas fa-calculator mr-3"></i> Tree Operations
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                            <h3 class="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+                                <i class="fas fa-search-location mr-2"></i> Search & Traversal
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="traverse('preorder')"
+                                    class="btn bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-arrow-right mr-1"></i> Preorder
+                                </button>
+                                <button onclick="traverse('inorder')"
+                                    class="btn bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-sort-amount-down mr-1"></i> Inorder
+                                </button>
+                                <button onclick="traverse('postorder')"
+                                    class="btn bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-arrow-left mr-1"></i> Postorder
+                                </button>
+                                <button onclick="traverse('levelorder')"
+                                    class="btn bg-gradient-to-r from-purple-500 to-indigo-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-layer-group mr-1"></i> Level Order
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                            <h3 class="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+                                <i class="fas fa-ruler-combined mr-2"></i> Measurements
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="calculateHeight()"
+                                    class="btn bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-arrow-up mr-1"></i> Height
+                                </button>
+                                <button onclick="calculateDepth()"
+                                    class="btn bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-arrow-down mr-1"></i> Depth
+                                </button>
+                                <button onclick="calculateSize()"
+                                    class="btn bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-expand-arrows-alt mr-1"></i> Size
+                                </button>
+                                <button onclick="calculateLeaves()"
+                                    class="btn bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-leaf mr-1"></i> Leaves
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                            <h3 class="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+                                <i class="fas fa-project-diagram mr-2"></i> Tree Properties
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="checkBST()"
+                                    class="btn bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-check-double mr-1"></i> Is BST?
+                                </button>
+                                <button onclick="checkBalanced()"
+                                    class="btn bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-balance-scale-right mr-1"></i> Balanced?
+                                </button>
+                                <button onclick="checkFull()"
+                                    class="btn bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-square-full mr-1"></i> Full?
+                                </button>
+                                <button onclick="checkComplete()"
+                                    class="btn bg-gradient-to-r from-teal-500 to-cyan-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-th-large mr-1"></i> Complete?
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                            <h3 class="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+                                <i class="fas fa-exchange-alt mr-2"></i> Transformations
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="mirrorTree()"
+                                    class="btn bg-gradient-to-r from-pink-500 to-rose-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-mirror mr-1"></i> Mirror
+                                </button>
+                                <button onclick="avlRotate()"
+                                    class="btn bg-gradient-to-r from-pink-500 to-rose-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-sync-alt mr-1"></i> Rotate
+                                </button>
+                                <button onclick="flattenTree()"
+                                    class="btn bg-gradient-to-r from-pink-500 to-rose-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-stream mr-1"></i> Flatten
+                                </button>
+                                <button onclick="pruneTree()"
+                                    class="btn bg-gradient-to-r from-pink-500 to-rose-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-cut mr-1"></i> Prune
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                            <h3 class="text-lg font-semibold text-blue-300 mb-3 flex items-center">
+                                <i class="fas fa-code-branch mr-2"></i> Advanced
+                            </h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="calculateLCA()"
+                                    class="btn bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-code-merge mr-1"></i> LCA
+                                </button>
+                                <button onclick="findPath()"
+                                    class="btn bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-route mr-1"></i> Path
+                                </button>
+                                <button onclick="findDiameter()"
+                                    class="btn bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-arrows-alt-h mr-1"></i> Diameter
+                                </button>
+                                <button onclick="findMaxPathSum()"
+                                    class="btn bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2.5 rounded-lg text-sm">
+                                    <i class="fas fa-coins mr-1"></i> Max Sum
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Panel -->
+            <div class="lg:col-span-2 glass-effect p-6 rounded-2xl">
+                <div class="flex justify-between items-center mb-5">
+                    <h2 class="text-xl font-bold text-yellow-300 flex items-center">
+                        <i class="fas fa-eye mr-3"></i> Visualization
+                    </h2>
+                    <div class="flex space-x-3">
+                        <div class="tooltip">
+                            <button onclick="exportPNG()"
+                                class="btn bg-gray-700 hover:bg-gray-600 text-white p-2.5 rounded-lg">
+                                <i class="fas fa-file-image"></i>
+                            </button>
+                            <span class="tooltip-text">Export as PNG</span>
+                        </div>
+                        <div class="tooltip">
+                            <button onclick="exportJSON()"
+                                class="btn bg-gray-700 hover:bg-gray-600 text-white p-2.5 rounded-lg">
+                                <i class="fas fa-file-code"></i>
+                            </button>
+                            <span class="tooltip-text">Export as JSON</span>
+                        </div>
+                        <div class="tooltip">
+                            <button onclick="resetTree()"
+                                class="btn bg-gray-700 hover:bg-gray-600 text-white p-2.5 rounded-lg">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <span class="tooltip-text">Reset Tree</span>
+                        </div>
+                        <div class="tooltip">
+                            <button onclick="fitView()"
+                                class="btn bg-gray-700 hover:bg-gray-600 text-white p-2.5 rounded-lg">
+                                <i class="fas fa-expand-arrows-alt"></i>
+                            </button>
+                            <span class="tooltip-text">Fit to View</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="treeVis" class="h-[500px] bg-gray-800 rounded-xl"></div>
+
+                <div class="mt-5 grid grid-cols-2 gap-5">
+                    <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                        <h3 class="text-md font-semibold text-blue-300 mb-3 flex items-center">
+                            <i class="fas fa-info-circle mr-2"></i> Tree Info
+                        </h3>
+                        <div id="treeInfo" class="text-sm text-gray-300">
+                            <div class="flex justify-between py-2 border-b border-gray-700">
+                                <span>Type:</span>
+                                <span id="treeType" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-700">
+                                <span>Nodes:</span>
+                                <span id="nodeCount" class="font-medium">0</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-700">
+                                <span>Height:</span>
+                                <span id="treeHeight" class="font-medium">0</span>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <span>Leaves:</span>
+                                <span id="leafCount" class="font-medium">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                        <h3 class="text-md font-semibold text-blue-300 mb-3 flex items-center">
+                            <i class="fas fa-history mr-2"></i> Last Operation
+                        </h3>
+                        <div id="operationResult" class="text-sm text-gray-300 custom-scrollbar"
+                            style="max-height: 80px; overflow-y: auto;">
+                            No operations yet
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="lg:col-span-1 glass-effect p-6 rounded-2xl">
+                <h2 class="text-xl font-bold mb-5 text-yellow-300 flex items-center">
+                    <i class="fas fa-list-alt mr-3"></i> Results
+                </h2>
+
+                <div class="space-y-5">
+                    <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                        <h3 class="text-md font-semibold text-blue-300 mb-3 flex items-center">
+                            <i class="fas fa-map-marked-alt mr-2"></i> Traversal Path
+                        </h3>
+                        <div id="traversalResult" class="text-sm text-gray-300 custom-scrollbar"
+                            style="max-height: 100px; overflow-y: auto;">
+                            No traversal performed yet
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                        <h3 class="text-md font-semibold text-blue-300 mb-3 flex items-center">
+                            <i class="fas fa-chart-line mr-2"></i> Statistics
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="treeStatsChart"></canvas>
+                        </div>
+                        <div id="treeStats" class="text-sm text-gray-300 mt-3">
+                            <div class="flex justify-between py-2 border-b border-gray-700">
+                                <span>Min Value:</span>
+                                <span id="minValue" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-700">
+                                <span>Max Value:</span>
+                                <span id="maxValue" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between py-2 border-b border-gray-700">
+                                <span>Sum Values:</span>
+                                <span id="sumValues" class="font-medium">-</span>
+                            </div>
+                            <div class="flex justify-between py-2">
+                                <span>Avg Value:</span>
+                                <span id="avgValue" class="font-medium">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-800 rounded-xl p-4 glass-effect">
+                        <h3 class="text-md font-semibold text-blue-300 mb-3 flex items-center">
+                            <i class="fas fa-history mr-2"></i> History
+                        </h3>
+                        <div id="historyLog" class="text-xs text-gray-400 custom-scrollbar"
+                            style="max-height: 150px; overflow-y: auto;">
+                            <!-- History entries will be added here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="mt-10 text-center text-gray-400 text-sm">
+            <p>Tree Traversal Master &copy; 2025 | Advanced Tree Visualization Tool</p>
+            <p class="mt-2">Developed by <a href="https://github.com/bilolkobilov" target="_blank"
+                    class="text-blue-500 hover:text-blue-700">
+                    <i class="fab fa-github"></i> Bilol Kobilov</a></p>
+        </footer>
+    </div>
+
+    <script>
+        // Application State
+        const appState = {
+            network: null,
+            treeData: { nodes: [], edges: [] },
+            adjList: {},
+            statsChart: null,
+            traversalInterval: null,
+            cachedElements: {},
+            nodeCounter: 1
+        };
+
+        // DOM Elements Cache
+        const elementsToCache = [
+            'treeVis', 'operationResult', 'traversalResult', 'historyLog',
+            'treeType', 'nodeCount', 'treeHeight', 'leafCount',
+            'minValue', 'maxValue', 'sumValues', 'avgValue',
+            'treeStatsChart', 'inputMethod', 'fileName',
+            'inputPanel', 'operationsPanel', 'inputTabBtn', 'operationsTabBtn',
+            'modal', 'modal-title', 'modal-body', 'modal-confirm', 'close-modal'
+        ];
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', () => {
+            cacheDOMElements();
+            initializeEventListeners();
+            initStatsChart();
+            initializeEmptyTree();
+            setupModal();
+        });
+
+        /**
+         * Sets up the modal functionality
+         */
+        function setupModal() {
+            const modal = appState.cachedElements.modal;
+            const closeModal = appState.cachedElements['close-modal'];
+            const confirmBtn = appState.cachedElements['modal-confirm'];
+
+            closeModal.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            confirmBtn.addEventListener('click', () => {
+                modal.style.display = 'none';
+            });
+
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+
+        /**
+         * Shows a modal dialog
+         * @param {string} title - Modal title
+         * @param {string} message - Modal message/content
+         */
+        function showModal(title, message) {
+            appState.cachedElements['modal-title'].textContent = title;
+            appState.cachedElements['modal-body'].innerHTML = message;
+            appState.cachedElements.modal.style.display = 'flex';
+        }
+
+        /**
+         * Caches frequently accessed DOM elements
+         */
+        function cacheDOMElements() {
+            elementsToCache.forEach(id => {
+                appState.cachedElements[id] = document.getElementById(id);
+            });
+        }
+
+        /**
+         * Sets up event listeners for the application
+         */
+        function initializeEventListeners() {
+            appState.cachedElements.inputMethod.addEventListener('change', handleInputMethodChange);
+            appState.cachedElements.inputTabBtn.addEventListener('click', () => togglePanel('input'));
+            appState.cachedElements.operationsTabBtn.addEventListener('click', () => togglePanel('operations'));
+        }
+
+        /**
+         * Initializes an empty tree visualization
+         */
+        function initializeEmptyTree() {
+            const nodes = new vis.DataSet([]);
+            const edges = new vis.DataSet([]);
+
+            const options = getNetworkOptions();
+            appState.network = new vis.Network(
+                appState.cachedElements.treeVis,
+                { nodes, edges },
+                options
+            );
+
+            updateTreeInfo();
+        }
+
+        /**
+         * Returns the network visualization options
+         */
+        function getNetworkOptions() {
+            return {
+                layout: {
+                    hierarchical: {
+                        direction: 'UD',
+                        sortMethod: 'directed',
+                        levelSeparation: 100,
+                        nodeSpacing: 150,
+                        treeSpacing: 200
+                    }
+                },
+                physics: {
+                    enabled: true,
+                    hierarchicalRepulsion: {
+                        nodeDistance: 120
+                    }
+                },
+                nodes: {
+                    shape: 'circle',
+                    size: 36,
+                    font: {
+                        size: 14,
+                        face: 'Roboto, Arial, sans-serif',
+                        color: '#ffffff',
+                        strokeWidth: 0,
+                        align: 'center'
+                    },
+                    borderWidth: 3,
+                    color: {
+                        border: '#4338ca',
+                        background: '#6366f1',
+                        highlight: {
+                            border: '#be185d',
+                            background: '#ec4899'
+                        },
+                        hover: {
+                            border: '#0369a1',
+                            background: '#38bdf8'
+                        }
+                    },
+                    shadow: {
+                        enabled: true,
+                        color: 'rgba(0,0,0,0.3)',
+                        size: 8,
+                        x: 3,
+                        y: 3
+                    },
+                    margin: 10,
+                    shapeProperties: {
+                        borderRadius: 0,
+                        interpolation: true,
+                        useBorderWithImage: true
+                    },
+                    scaling: {
+                        min: 10,
+                        max: 30,
+                        label: {
+                            enabled: true,
+                            min: 14,
+                            max: 24
+                        }
+                    }
+                },
+                edges: {
+                    arrows: 'to',
+                    color: '#f59e0b', // Changed to bright orange for better visibility
+                    width: 3, // Thicker edges
+                    smooth: {
+                        type: 'continuous',
+                        roundness: 0.5
+                    },
+                    shadow: {
+                        enabled: true,
+                        color: 'rgba(0,0,0,0.3)',
+                        size: 5,
+                        x: 3,
+                        y: 3
+                    },
+                    hidden: false // Ensure edges are never hidden
+                },
+                interaction: {
+                    hover: true,
+                    tooltipDelay: 200,
+                    hideEdgesOnDrag: false, // Keep edges visible during drag
+                    dragNodes: true,
+                    dragView: true
+                }
+            };
+        }
+
+        /**
+         * Initializes the statistics chart
+         */
+        function initStatsChart() {
+            const ctx = appState.cachedElements.treeStatsChart.getContext('2d');
+            appState.statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Nodes', 'Height', 'Leaves'],
+                    datasets: [{
+                        label: 'Tree Stats',
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            'rgba(99, 102, 241, 0.7)',
+                            'rgba(236, 72, 153, 0.7)',
+                            'rgba(16, 185, 129, 0.7)'
+                        ],
+                        borderColor: [
+                            'rgba(99, 102, 241, 1)',
+                            'rgba(236, 72, 153, 1)',
+                            'rgba(16, 185, 129, 1)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: '#94a3b8'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        /**
+         * Updates the statistics chart with new data
+         * @param {number} nodeCount - Total number of nodes
+         * @param {number} height - Height of the tree
+         * @param {number} leaves - Number of leaf nodes
+         */
+        function updateStatsChart(nodeCount, height, leaves) {
+            appState.statsChart.data.datasets[0].data = [nodeCount, height, leaves];
+            appState.statsChart.update();
+        }
+
+        /**
+         * Toggles between input and operations panels
+         * @param {string} panel - Panel to show ('input' or 'operations')
+         */
+        function togglePanel(panel) {
+            if (panel === 'input') {
+                appState.cachedElements.inputPanel.classList.remove('hidden');
+                appState.cachedElements.operationsPanel.classList.add('hidden');
+                appState.cachedElements.inputTabBtn.classList.add('tab-active');
+                appState.cachedElements.operationsTabBtn.classList.remove('tab-active');
+            } else {
+                appState.cachedElements.inputPanel.classList.add('hidden');
+                appState.cachedElements.operationsPanel.classList.remove('hidden');
+                appState.cachedElements.inputTabBtn.classList.remove('tab-active');
+                appState.cachedElements.operationsTabBtn.classList.add('tab-active');
+            }
+        }
+
+        /**
+         * Handles changes to the input method selection
+         * @param {Event} e - The change event
+         */
+        function handleInputMethodChange(e) {
+            ['simpleInput', 'manualInput', 'graphicalInput', 'sampleInput'].forEach(id =>
+                document.getElementById(id).classList.add('hidden'));
+            document.getElementById(`${e.target.value}Input`).classList.remove('hidden');
+            if (e.target.value === 'graphical') initGraphicalBuilder();
+        }
+
+        /**
+         * Initializes the graphical tree builder
+         */
+        function initGraphicalBuilder() {
+            const builder = document.getElementById('graphBuilder');
+            const options = getNetworkOptions();
+
+            appState.network = new vis.Network(
+                builder,
+                { nodes: new vis.DataSet([]), edges: new vis.DataSet([]) },
+                {
+                    ...options,
+                    manipulation: {
+                        addNode: (data, callback) => {
+                            const nodeValue = prompt('Enter node value:', `Node${appState.nodeCounter}`);
+                            if (nodeValue === null) return;
+
+                            data.label = nodeValue || `Node${appState.nodeCounter}`;
+                            data.color = {
+                                background: '#ed8936',
+                                border: '#dd6b20',
+                                highlight: {
+                                    background: '#f56565',
+                                    border: '#e53e3e'
+                                }
+                            };
+                            callback(data);
+                            appState.nodeCounter++;
+                        },
+                        addEdge: (data, callback) => {
+                            if (data.from === data.to) {
+                                showModal('Invalid Edge', 'Cannot create self-loops in trees');
+                                return;
+                            }
+                            callback(data);
+                        },
+                        editNode: (data, callback) => {
+                            const newValue = prompt('Enter new node value:', data.label);
+                            if (newValue === null) return;
+
+                            data.label = newValue || data.label;
+                            callback(data);
+                        },
+                        deleteNode: (data, callback) => {
+                            if (confirm("Delete this node and all its descendants?")) {
+                                callback(data);
+                            }
+                        }
+                    }
+                }
+            );
+
+            // Enable node dragging and edge creation
+            appState.network.on('doubleClick', (params) => {
+                if (params.nodes.length === 1) {
+                    const nodeId = params.nodes[0];
+                    const newNodeId = `Node${appState.nodeCounter}`;
+                    const nodeValue = prompt('Enter node value:', newNodeId);
+                    if (nodeValue === null) return;
+
+                    appState.network.body.data.nodes.add({
+                        id: newNodeId,
+                        label: nodeValue || newNodeId,
+                        color: {
+                            background: '#ed8936',
+                            border: '#dd6b20',
+                            highlight: {
+                                background: '#f56565',
+                                border: '#e53e3e'
+                            }
+                        }
+                    });
+
+                    appState.network.body.data.edges.add({
+                        from: nodeId,
+                        to: newNodeId
+                    });
+
+                    appState.nodeCounter++;
+                } else if (params.nodes.length === 0) {
+                    const newNodeId = `Node${appState.nodeCounter}`;
+                    const nodeValue = prompt('Enter node value:', newNodeId);
+                    if (nodeValue === null) return;
+
+                    appState.network.body.data.nodes.add({
+                        id: newNodeId,
+                        label: nodeValue || newNodeId,
+                        color: {
+                            background: '#ed8936',
+                            border: '#dd6b20',
+                            highlight: {
+                                background: '#f56565',
+                                border: '#e53e3e'
+                            }
+                        }
+                    });
+
+                    appState.nodeCounter++;
+                }
+            });
+
+            // Restore interaction after node click
+            appState.network.on("click", (params) => {
+                if (params.nodes.length === 1) {
+                    const nodeId = params.nodes[0];
+                    highlightNode(nodeId);
+                }
+            });
+        }
+
+        /**
+         * Adds a node to the graphical builder
+         */
+        function addNodeToBuilder() {
+            if (!appState.network) return;
+
+            const newNodeId = `Node${appState.nodeCounter}`;
+            const nodeValue = prompt('Enter node value:', newNodeId);
+            if (nodeValue === null) return;
+
+            appState.network.body.data.nodes.add({
+                id: newNodeId,
+                label: nodeValue || newNodeId,
+                color: {
+                    background: '#ed8936',
+                    border: '#dd6b20',
+                    highlight: {
+                        background: '#f56565',
+                        border: '#e53e3e'
+                    }
+                }
+            });
+
+            // Position the new node near the center
+            const viewPosition = appState.network.getViewPosition();
+            appState.network.body.data.nodes.update({
+                id: newNodeId,
+                x: viewPosition.x,
+                y: viewPosition.y
+            });
+
+            appState.nodeCounter++;
+        }
+
+        /**
+         * Adds an edge to the graphical builder
+         */
+        function addEdgeToBuilder() {
+            if (!appState.network) return;
+
+            const fromNode = prompt("Enter source node ID:");
+            const toNode = prompt("Enter target node ID:");
+
+            if (!fromNode || !toNode) {
+                showModal('Missing Information', 'Please enter both source and target node IDs');
+                return;
+            }
+
+            if (fromNode === toNode) {
+                showModal('Invalid Edge', 'Cannot create self-loops in trees');
+                return;
+            }
+
+            if (!appState.network.body.data.nodes.get(fromNode) || !appState.network.body.data.nodes.get(toNode)) {
+                showModal('Invalid Nodes', 'One or both nodes do not exist');
+                return;
+            }
+
+            try {
+                appState.network.body.data.edges.add({
+                    from: fromNode,
+                    to: toNode
+                });
+            } catch (e) {
+                showModal('Error', 'Failed to create edge: ' + e.message);
+            }
+        }
+
+        /**
+         * Resets the graphical builder
+         */
+        function resetGraphBuilder() {
+            if (!appState.network) return;
+
+            if (confirm("Are you sure you want to reset the graph builder? This will remove all nodes and edges.")) {
+                appState.network.body.data.nodes.clear();
+                appState.network.body.data.edges.clear();
+                appState.nodeCounter = 1;
+                addHistory('Graph builder was reset');
+            }
+        }
+
+        /**
+         * Resets the main tree visualization
+         */
+        function resetTree() {
+            if (confirm("Are you sure you want to reset the tree? This will remove all nodes and edges.")) {
+                appState.adjList = {};
+                appState.network.body.data.nodes.clear();
+                appState.network.body.data.edges.clear();
+                appState.nodeCounter = 1;
+                updateTreeInfo();
+                addHistory('Tree was reset');
+            }
+        }
+
+        /**
+         * Loads a tree from the simple builder input
+         */
+        function loadSimpleTree() {
+            const rootValue = document.getElementById('rootNodeValue').value.trim();
+            const childValues = document.getElementById('childNodeValue').value.trim();
+
+            if (!rootValue) {
+                showModal('Missing Information', 'Please enter a root node value');
+                return;
+            }
+
+            appState.adjList = {};
+            appState.adjList[rootValue] = [];
+
+            if (childValues) {
+                const children = childValues.split(',').map(c => c.trim()).filter(c => c !== '');
+                appState.adjList[rootValue] = children;
+
+                // Add children to adjList with empty arrays
+                children.forEach(child => {
+                    if (!appState.adjList[child]) {
+                        appState.adjList[child] = [];
+                    }
+                });
+            }
+
+            buildTreeVis();
+            addHistory(`Tree loaded from simple builder with root ${rootValue}`);
+        }
+
+        /**
+         * Adds a child to the root node in simple builder
+         */
+        function addChildToRoot() {
+            const childValue = document.getElementById('childNodeValue').value.trim();
+            if (!childValue) {
+                showModal('Missing Information', 'Please enter a child node value');
+                return;
+            }
+
+            document.getElementById('childNodeValue').value = ''; // Clear input
+            const currentChildren = document.getElementById('childNodeValue').placeholder;
+            document.getElementById('childNodeValue').placeholder = currentChildren
+                ? `${currentChildren}, ${childValue}`
+                : childValue;
+        }
+
+        /**
+         * Loads a tree from text input (parent-child pairs or JSON)
+         */
+        function loadTreeFromText() {
+            try {
+                const parentChildPairs = document.getElementById('parentChildPairs').value.trim();
+                const jsonInput = document.getElementById('jsonInput').value.trim();
+
+                if (!parentChildPairs && !jsonInput) {
+                    showModal('Missing Information', 'Please enter tree data in one of the formats');
+                    return;
+                }
+
+                appState.adjList = {};
+
+                if (parentChildPairs) {
+                    const lines = parentChildPairs.split('\n').filter(line => line.trim() !== '');
+
+                    lines.forEach(line => {
+                        // Handle both "Parent: Child1, Child2" and "Parent -> Child1, Child2" formats
+                        const separator = line.includes(':') ? ':' : (line.includes('->') ? '->' : null);
+                        if (!separator) {
+                            throw new Error(`Invalid format in line: ${line}`);
+                        }
+
+                        const parts = line.split(separator);
+                        if (parts.length !== 2) {
+                            throw new Error(`Invalid format in line: ${line}`);
+                        }
+
+                        const parent = parts[0].trim();
+                        const children = parts[1].split(',').map(c => c.trim()).filter(c => c !== '');
+
+                        if (!appState.adjList[parent]) {
+                            appState.adjList[parent] = [];
+                        }
+
+                        children.forEach(child => {
+                            if (!appState.adjList[parent].includes(child)) {
+                                appState.adjList[parent].push(child);
+                            }
+
+                            // Ensure all children exist in adjList
+                            if (!appState.adjList[child]) {
+                                appState.adjList[child] = [];
+                            }
+                        });
+                    });
+                } else if (jsonInput) {
+                    appState.adjList = JSON.parse(jsonInput);
+
+                    // Validate JSON structure
+                    if (typeof appState.adjList !== 'object' || appState.adjList === null) {
+                        throw new Error('Invalid JSON format. Expected an object with parent-child mappings.');
+                    }
+
+                    // Ensure all children exist in adjList
+                    for (const parent in appState.adjList) {
+                        if (!Array.isArray(appState.adjList[parent])) {
+                            throw new Error(`Children of ${parent} must be an array`);
+                        }
+
+                        appState.adjList[parent].forEach(child => {
+                            if (!appState.adjList[child]) {
+                                appState.adjList[child] = [];
+                            }
+                        });
+                    }
+                }
+
+                buildTreeVis();
+                addHistory(`Tree loaded from text input`);
+            } catch (e) {
+                showModal('Error', 'Error parsing tree: ' + e.message);
+            }
+        }
+
+        /**
+         * Loads a tree from the graphical builder
+         */
+        function loadFromGraphical() {
+            if (!appState.network) {
+                showModal('Error', 'Please build a tree in the graphical builder first');
+                return;
+            }
+
+            const graphNodes = appState.network.body.data.nodes.get();
+            const graphEdges = appState.network.body.data.edges.get();
+
+            if (graphNodes.length === 0) {
+                showModal('Error', 'No nodes in the graphical builder');
+                return;
+            }
+
+            // Check for multiple roots (invalid tree)
+            const childNodes = new Set();
+            graphEdges.forEach(edge => childNodes.add(edge.to));
+            const roots = graphNodes.filter(node => !childNodes.has(node.id));
+
+            if (roots.length > 1) {
+                showModal('Invalid Tree', 'Multiple roots detected. A tree can only have one root node.');
+                return;
+            }
+
+            if (roots.length === 0 && graphNodes.length > 1) {
+                showModal('Invalid Tree', 'No root node detected. The tree contains cycles.');
+                return;
+            }
+
+            appState.adjList = {};
+            graphNodes.forEach(node => appState.adjList[node.id] = []);
+            graphEdges.forEach(edge => appState.adjList[edge.from].push(edge.to));
+
+            buildTreeVis();
+            addHistory(`Tree loaded from graphical builder`);
+        }
+
+        /**
+         * Loads a sample tree
+         * @param {string} type - Type of sample tree to load
+         */
+        function loadSample(type) {
+            const samples = {
+                'binary': { '1': ['2', '3'], '2': ['4', '5'], '3': ['6', '7'] },
+                'nary': { 'A': ['B', 'C', 'D'], 'B': ['E', 'F'], 'D': ['G', 'H', 'I'], 'F': ['J'] },
+                'avl': { '10': ['5', '15'], '5': ['3', '7'], '15': ['13', '17'] },
+                'redblack': { '11': ['2', '14'], '2': ['1', '7'], '7': ['5', '8'], '14': ['13', '15'] },
+                'complete': { '1': ['2', '3'], '2': ['4', '5'], '3': ['6', '7'], '4': ['8', '9'], '5': ['10', '11'] }
+            };
+
+            appState.adjList = samples[type] || samples['binary'];
+            buildTreeVis();
+            addHistory(`Loaded sample tree: ${type.replace(/\b\w/g, l => l.toUpperCase())}`);
+        }
+
+        /**
+         * Builds the tree visualization from the adjacency list
+         */
+        function buildTreeVis() {
+            // Clear previous data and any ongoing animations
+            clearTraversalAnimation();
+
+            const nodes = new vis.DataSet([]);
+            const edges = new vis.DataSet([]);
+
+            // Add all nodes and edges
+            Object.keys(appState.adjList).forEach(parent => {
+                if (!nodes.get(parent)) {
+                    nodes.add({
+                        id: parent,
+                        label: parent,
+                        color: {
+                            background: '#6366f1',
+                            border: '#4f46e5',
+                            highlight: {
+                                background: '#ec4899',
+                                border: '#db2777'
+                            }
+                        }
+                    });
+                }
+
+                appState.adjList[parent].forEach(child => {
+                    if (!nodes.get(child)) {
+                        nodes.add({
+                            id: child,
+                            label: child,
+                            color: {
+                                background: '#6366f1',
+                                border: '#4f46e5',
+                                highlight: {
+                                    background: '#ec4899',
+                                    border: '#db2777'
+                                }
+                            }
+                        });
+                    }
+
+                    edges.add({ from: parent, to: child });
+                });
+            });
+
+            // Create or update the network
+            if (appState.network) {
+                appState.network.setData({ nodes, edges });
+            } else {
+                appState.network = new vis.Network(
+                    appState.cachedElements.treeVis,
+                    { nodes, edges },
+                    getNetworkOptions()
+                );
+            }
+
+            appState.network.fit();
+            updateTreeInfo();
+        }
+
+        /**
+         * Clears any ongoing traversal animation
+         */
+        function clearTraversalAnimation() {
+            if (appState.traversalInterval) {
+                clearInterval(appState.traversalInterval);
+                appState.traversalInterval = null;
+            }
+        }
+
+        /**
+         * Updates the tree information panel
+         */
+        function updateTreeInfo() {
+            const nodeCount = appState.network.body.data.nodes.length;
+            const leafCount = Object.keys(appState.adjList).filter(node => !appState.adjList[node]?.length).length;
+            const root = findRoot();
+            const height = root ? getHeight(root) : 0;
+
+            // Update stats chart
+            updateStatsChart(nodeCount, height, leafCount);
+
+            // Determine tree type
+            let treeType = "Generic Tree";
+            if (isBinaryTree()) {
+                treeType = "Binary Tree";
+                if (isBST()) treeType = "Binary Search Tree";
+                if (isComplete()) treeType += " (Complete)";
+                else if (isFull()) treeType += " (Full)";
+                if (isBalanced()) treeType += " (Balanced)";
+            } else if (isNAryTree()) {
+                treeType = "N-ary Tree";
+            }
+
+            // Update UI
+            appState.cachedElements.treeType.textContent = treeType;
+            appState.cachedElements.nodeCount.textContent = nodeCount;
+            appState.cachedElements.treeHeight.textContent = height;
+            appState.cachedElements.leafCount.textContent = leafCount;
+
+            // Update statistics
+            updateTreeStatistics();
+        }
+
+        /**
+         * Updates the tree statistics panel
+         */
+        function updateTreeStatistics() {
+            const allNodes = appState.network.body.data.nodes.get();
+            let minValue = Infinity;
+            let maxValue = -Infinity;
+            let sumValues = 0;
+            let numericNodes = 0;
+
+            allNodes.forEach(node => {
+                const num = parseFloat(node.label);
+                if (!isNaN(num)) {
+                    minValue = Math.min(minValue, num);
+                    maxValue = Math.max(maxValue, num);
+                    sumValues += num;
+                    numericNodes++;
+                }
+            });
+
+            appState.cachedElements.minValue.textContent = numericNodes > 0 ? minValue : '-';
+            appState.cachedElements.maxValue.textContent = numericNodes > 0 ? maxValue : '-';
+            appState.cachedElements.sumValues.textContent = numericNodes > 0 ? sumValues : '-';
+            appState.cachedElements.avgValue.textContent = numericNodes > 0 ? (sumValues / numericNodes).toFixed(2) : '-';
+        }
+
+        /**
+         * Finds the root node of the tree
+         * @returns {string|null} The ID of the root node or null if not found
+         */
+        function findRoot() {
+            if (appState.network.body.data.nodes.length === 0) return null;
+
+            const childNodes = new Set();
+            Object.values(appState.adjList).forEach(children => {
+                children.forEach(child => childNodes.add(child));
+            });
+
+            const allNodes = new Set(Object.keys(appState.adjList));
+            Object.values(appState.adjList).forEach(children => {
+                children.forEach(child => allNodes.add(child));
+            });
+
+            for (const node of allNodes) {
+                if (!childNodes.has(node)) {
+                    return node;
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * Performs a tree traversal
+         * @param {string} type - Type of traversal ('preorder', 'inorder', 'postorder', 'levelorder')
+         */
+        function traverse(type) {
+            const root = findRoot();
+            if (!root) {
+                showModal('Error', 'No tree loaded or invalid tree structure');
+                return;
+            }
+
+            let result = [];
+            switch (type) {
+                case 'preorder': preorder(root, result); break;
+                case 'inorder':
+                    if (!isBinaryTree()) {
+                        showModal('Invalid Operation', 'Inorder traversal is only valid for binary trees');
+                        return;
+                    }
+                    inorder(root, result);
+                    break;
+                case 'postorder': postorder(root, result); break;
+                case 'levelorder': levelOrder(root, result); break;
+            }
+
+            animateTraversal(result, type);
+            appState.cachedElements.traversalResult.innerHTML = `
+                <div class="font-bold text-purple-300 mb-1">${type.toUpperCase()} TRAVERSAL</div>
+                <div>${result.join(' → ')}</div>
+            `;
+            addHistory(`Performed ${type} traversal`);
+        }
+
+        /**
+         * Performs preorder traversal
+         * @param {string} node - Current node ID
+         * @param {array} result - Array to store traversal path
+         */
+        function preorder(node, result) {
+            if (!node) return;
+            result.push(node);
+            appState.adjList[node]?.forEach(child => preorder(child, result));
+        }
+
+        /**
+         * Performs inorder traversal
+         * @param {string} node - Current node ID
+         * @param {array} result - Array to store traversal path
+         */
+        function inorder(node, result) {
+            if (!node || !isBinaryTree()) return;
+            if (appState.adjList[node]?.[0]) inorder(appState.adjList[node][0], result);
+            result.push(node);
+            if (appState.adjList[node]?.[1]) inorder(appState.adjList[node][1], result);
+        }
+
+        /**
+         * Performs postorder traversal
+         * @param {string} node - Current node ID
+         * @param {array} result - Array to store traversal path
+         */
+        function postorder(node, result) {
+            if (!node) return;
+            appState.adjList[node]?.forEach(child => postorder(child, result));
+            result.push(node);
+        }
+
+        /**
+         * Performs level-order traversal
+         * @param {string} root - Root node ID
+         * @param {array} result - Array to store traversal path
+         */
+        function levelOrder(root, result) {
+            if (!root) return;
+
+            const queue = [root];
+            while (queue.length > 0) {
+                const levelSize = queue.length;
+                for (let i = 0; i < levelSize; i++) {
+                    const node = queue.shift();
+                    result.push(node);
+                    appState.adjList[node]?.forEach(child => queue.push(child));
+                }
+            }
+        }
+
+        /**
+         * Animates the traversal path
+         * @param {array} order - Array of node IDs in traversal order
+         * @param {string} traversalType - Type of traversal being animated
+         */
+        function animateTraversal(order, traversalType) {
+            // Clear any existing animation
+            clearTraversalAnimation();
+
+            // Reset all nodes and edges to default appearance
+            resetTreeAppearance();
+
+            let i = 0;
+            appState.traversalInterval = setInterval(() => {
+                if (i > 0) {
+                    // Reset previous node
+                    updateNodeAppearance(order[i - 1], {
+                        background: '#6366f1',
+                        border: '#4f46e5'
+                    });
+
+                    // Highlight edge from parent to current node if not first node
+                    if (i > 0 && i < order.length) {
+                        const parent = findParent(order[i]);
+                        if (parent) {
+                            updateEdgeAppearance(`${parent}->${order[i]}`, {
+                                color: '#10b981',
+                                width: 3
+                            });
+                        }
+                    }
+                }
+
+                if (i >= order.length) {
+                    clearInterval(appState.traversalInterval);
+                    return;
+                }
+
+                // Highlight current node
+                updateNodeAppearance(order[i], {
+                    background: '#10b981',
+                    border: '#059669'
+                });
+
+                // Focus on current node with animation
+                appState.network.focus(order[i], {
+                    scale: 1.2,
+                    animation: {
+                        duration: 300,
+                        easingFunction: 'easeInOutQuad'
+                    }
+                });
+
+                i++;
+            }, 800);
+        }
+
+        /**
+         * Resets all nodes and edges to their default appearance
+         */
+        function resetTreeAppearance() {
+            const nodes = appState.network.body.data.nodes.get();
+            const edges = appState.network.body.data.edges.get();
+
+            nodes.forEach(node => {
+                updateNodeAppearance(node.id, {
+                    background: '#6366f1',
+                    border: '#4f46e5'
+                });
+            });
+
+            edges.forEach(edge => {
+                updateEdgeAppearance(edge.id, {
+                    color: '#f59e0b',
+                    width: 3
+                });
+            });
+        }
+
+        /**
+         * Updates a node's visual appearance
+         * @param {string} nodeId - ID of the node to update
+         * @param {object} styles - Object containing style properties
+         */
+        function updateNodeAppearance(nodeId, styles) {
+            appState.network.body.data.nodes.update({
+                id: nodeId,
+                color: {
+                    background: styles.background,
+                    border: styles.border,
+                    highlight: {
+                        background: '#ec4899',
+                        border: '#db2777'
+                    }
+                }
+            });
+        }
+
+        /**
+         * Updates an edge's visual appearance
+         * @param {string} edgeId - ID of the edge to update
+         * @param {object} styles - Object containing style properties
+         */
+        function updateEdgeAppearance(edgeId, styles) {
+            appState.network.body.data.edges.update({
+                id: edgeId,
+                color: styles.color,
+                width: styles.width
+            });
+        }
+
+        /**
+         * Finds the parent of a node
+         * @param {string} nodeId - ID of the node to find parent for
+         * @returns {string|null} Parent node ID or null if not found
+         */
+        function findParent(nodeId) {
+            for (const parent in appState.adjList) {
+                if (appState.adjList[parent].includes(nodeId)) {
+                    return parent;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Highlights a specific node
+         * @param {string} nodeId - ID of the node to highlight
+         */
+        function highlightNode(nodeId) {
+            // Reset all nodes to default color
+            resetTreeAppearance();
+
+            // Highlight the selected node
+            updateNodeAppearance(nodeId, {
+                background: '#ec4899',
+                border: '#db2777'
+            });
+
+            // Focus on the node
+            appState.network.focus(nodeId, {
+                scale: 1.5,
+                animation: {
+                    duration: 500,
+                    easingFunction: 'easeInOutBack'
+                }
+            });
+
+            // Show node info
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">NODE INFO</div>
+                <div>ID: ${nodeId}</div>
+                <div>Depth: ${getDepth(nodeId)}</div>
+                <div>Children: ${appState.adjList[nodeId]?.length || 0}</div>
+            `;
+        }
+
+        /**
+         * Checks if the tree is binary
+         * @returns {boolean} True if the tree is binary
+         */
+        function isBinaryTree() {
+            return Object.values(appState.adjList).every(children => children.length <= 2);
+        }
+
+        /**
+         * Checks if the tree is n-ary
+         * @returns {boolean} True if the tree is n-ary
+         */
+        function isNAryTree() {
+            return !isBinaryTree();
+        }
+
+        /**
+         * Checks if the tree is a binary search tree
+         * @returns {boolean} True if the tree is a BST
+         */
+        function isBST() {
+            if (!isBinaryTree()) return false;
+            const root = findRoot();
+            return root ? checkBSTUtil(root, -Infinity, Infinity) : false;
+        }
+
+        /**
+         * Helper function for BST validation
+         */
+        function checkBSTUtil(node, min, max) {
+            if (!node) return true;
+            const num = parseFloat(node);
+            if (isNaN(num)) return false;
+            if (num <= min || num >= max) return false;
+            return checkBSTUtil(appState.adjList[node]?.[0], min, num) &&
+                checkBSTUtil(appState.adjList[node]?.[1], num, max);
+        }
+
+        /**
+         * Checks if the tree is balanced
+         * @returns {boolean} True if the tree is balanced
+         */
+        function isBalanced() {
+            const root = findRoot();
+            return root ? checkBalancedUtil(root) !== -1 : false;
+        }
+
+        /**
+         * Helper function for balanced tree validation
+         */
+        function checkBalancedUtil(node) {
+            if (!node) return 0;
+
+            const leftHeight = checkBalancedUtil(appState.adjList[node]?.[0]);
+            if (leftHeight === -1) return -1;
+
+            const rightHeight = checkBalancedUtil(appState.adjList[node]?.[1]);
+            if (rightHeight === -1) return -1;
+
+            if (Math.abs(leftHeight - rightHeight) > 1) return -1;
+            return Math.max(leftHeight, rightHeight) + 1;
+        }
+
+        /**
+         * Checks if the tree is full
+         * @returns {boolean} True if the tree is full
+         */
+        function isFull() {
+            if (!isBinaryTree()) return false;
+            const root = findRoot();
+            return root ? checkFullUtil(root) : false;
+        }
+
+        /**
+         * Helper function for full tree validation
+         */
+        function checkFullUtil(node) {
+            if (!node) return true;
+
+            const children = appState.adjList[node] || [];
+            if (children.length === 0) return true;
+            if (children.length !== 2) return false;
+
+            return checkFullUtil(children[0]) && checkFullUtil(children[1]);
+        }
+
+        /**
+         * Checks if the tree is complete
+         * @returns {boolean} True if the tree is complete
+         */
+        function isComplete() {
+            if (!isBinaryTree()) return false;
+            const root = findRoot();
+            if (!root) return false;
+
+            const queue = [root];
+            let seenNull = false;
+
+            while (queue.length > 0) {
+                const node = queue.shift();
+
+                if (!node) {
+                    seenNull = true;
+                    continue;
+                }
+
+                if (seenNull) return false;
+
+                const children = appState.adjList[node] || [];
+                queue.push(children[0] || null);
+                queue.push(children[1] || null);
+            }
+
+            return true;
+        }
+
+        /**
+         * Calculates and displays the tree height
+         */
+        function calculateHeight() {
+            const root = findRoot();
+            const height = root ? getHeight(root) : 0;
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">TREE HEIGHT</div>
+                <div>The height of the tree is ${height}</div>
+            `;
+            addHistory(`Calculated tree height: ${height}`);
+        }
+
+        /**
+         * Calculates the height of a subtree
+         * @param {string} node - Root node of the subtree
+         * @returns {number} Height of the subtree
+         */
+        function getHeight(node) {
+            if (!node || !appState.adjList[node]?.length) return 0;
+            return 1 + Math.max(...appState.adjList[node].map(child => getHeight(child)));
+        }
+
+        /**
+         * Calculates and displays the depth of a node
+         */
+        function calculateDepth() {
+            const node = prompt("Enter node to find depth:", Object.keys(appState.adjList)[0]);
+            if (!node || !appState.network.body.data.nodes.get(node)) {
+                showModal('Error', 'Invalid node');
+                return;
+            }
+
+            const depth = getDepth(node);
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">NODE DEPTH</div>
+                <div>Depth of node ${node} is ${depth}</div>
+            `;
+            highlightNode(node);
+            addHistory(`Calculated depth of node ${node}: ${depth}`);
+        }
+
+        /**
+         * Calculates the depth of a node
+         * @param {string} node - Node to calculate depth for
+         * @returns {number} Depth of the node
+         */
+        function getDepth(node) {
+            let depth = 0;
+            let current = node;
+
+            while (true) {
+                const parent = findParent(current);
+                if (!parent) break;
+                depth++;
+                current = parent;
+            }
+
+            return depth;
+        }
+
+        /**
+         * Calculates and displays the size of the tree
+         */
+        function calculateSize() {
+            const size = appState.network.body.data.nodes.length;
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">TREE SIZE</div>
+                <div>The tree contains ${size} nodes</div>
+            `;
+            addHistory(`Calculated tree size: ${size} nodes`);
+        }
+
+        /**
+         * Calculates and displays the number of leaf nodes
+         */
+        function calculateLeaves() {
+            const leaves = Object.keys(appState.adjList).filter(node => !appState.adjList[node]?.length).length;
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">LEAF NODES</div>
+                <div>The tree has ${leaves} leaf nodes</div>
+            `;
+            addHistory(`Counted leaf nodes: ${leaves}`);
+        }
+
+        /**
+         * Checks and displays if the tree is a BST
+         */
+        function checkBST() {
+            const isBst = isBST();
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">BINARY SEARCH TREE</div>
+                <div>The tree ${isBst ? 'is' : 'is not'} a valid Binary Search Tree</div>
+            `;
+            addHistory(`Checked BST property: ${isBst ? 'Valid BST' : 'Not a BST'}`);
+        }
+
+        /**
+         * Checks and displays if the tree is balanced
+         */
+        function checkBalanced() {
+            const balanced = isBalanced();
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">TREE BALANCE</div>
+                <div>The tree ${balanced ? 'is' : 'is not'} balanced</div>
+            `;
+            addHistory(`Checked balance: ${balanced ? 'Balanced' : 'Not balanced'}`);
+        }
+
+        /**
+         * Checks and displays if the tree is full
+         */
+        function checkFull() {
+            const full = isFull();
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">FULL BINARY TREE</div>
+                <div>The tree ${full ? 'is' : 'is not'} a full binary tree</div>
+            `;
+            addHistory(`Checked full binary tree: ${full ? 'Full' : 'Not full'}`);
+        }
+
+        /**
+         * Checks and displays if the tree is complete
+         */
+        function checkComplete() {
+            const complete = isComplete();
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">COMPLETE BINARY TREE</div>
+                <div>The tree ${complete ? 'is' : 'is not'} a complete binary tree</div>
+            `;
+            addHistory(`Checked complete binary tree: ${complete ? 'Complete' : 'Not complete'}`);
+        }
+
+        /**
+         * Mirrors (inverts) the tree
+         */
+        function mirrorTree() {
+            const root = findRoot();
+            if (!root) {
+                showModal('Error', 'No tree loaded');
+                return;
+            }
+
+            mirror(root);
+            buildTreeVis();
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">TREE MIRRORED</div>
+                <div>The tree has been mirrored (inverted)</div>
+            `;
+            addHistory(`Mirrored the tree`);
+        }
+
+        /**
+         * Recursively mirrors a subtree
+         * @param {string} node - Root of the subtree to mirror
+         */
+        function mirror(node) {
+            if (!node || !appState.adjList[node]) return;
+            appState.adjList[node].reverse();
+            appState.adjList[node].forEach(child => mirror(child));
+        }
+
+        /**
+         * Performs an AVL rotation
+         */
+        function avlRotate() {
+            if (!isBinaryTree()) {
+                showModal('Invalid Operation', 'Rotation is only valid for binary trees');
+                return;
+            }
+
+            const node = prompt("Node to rotate around:", Object.keys(appState.adjList)[0]);
+            if (!node || !appState.network.body.data.nodes.get(node)) {
+                showModal('Error', 'Invalid node');
+                return;
+            }
+
+            const type = prompt("Rotation type (left/right):", "left").toLowerCase();
+            if (type !== 'left' && type !== 'right') {
+                showModal('Error', 'Invalid rotation type');
+                return;
+            }
+
+            if (type === 'left') leftRotate(node);
+            else if (type === 'right') rightRotate(node);
+
+            buildTreeVis();
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">TREE ROTATION</div>
+                <div>Performed ${type} rotation at node ${node}</div>
+            `;
+            addHistory(`Performed ${type} rotation at node ${node}`);
+        }
+
+        /**
+         * Performs a left rotation
+         * @param {string} x - Node to rotate around
+         */
+        function leftRotate(x) {
+            const y = appState.adjList[x]?.[1];
+            if (!y) return;
+
+            appState.adjList[x][1] = appState.adjList[y]?.[0] || null;
+            appState.adjList[y] = [x, ...(appState.adjList[y]?.slice(1) || [])];
+
+            // Update parent references if needed
+            const parent = findParent(x);
+            if (parent) {
+                const index = appState.adjList[parent].indexOf(x);
+                if (index !== -1) {
+                    appState.adjList[parent][index] = y;
+                }
+            }
+        }
+
+        /**
+         * Performs a right rotation
+         * @param {string} y - Node to rotate around
+         */
+        function rightRotate(y) {
+            const x = appState.adjList[y]?.[0];
+            if (!x) return;
+
+            appState.adjList[y][0] = appState.adjList[x]?.[1] || null;
+            appState.adjList[x] = [...(appState.adjList[x]?.slice(0, 1) || []), y];
+
+            // Update parent references if needed
+            const parent = findParent(y);
+            if (parent) {
+                const index = appState.adjList[parent].indexOf(y);
+                if (index !== -1) {
+                    appState.adjList[parent][index] = x;
+                }
+            }
+        }
+
+        /**
+         * Flattens the tree to a linked list
+         */
+        function flattenTree() {
+            const root = findRoot();
+            if (!root) {
+                showModal('Error', 'No tree loaded');
+                return;
+            }
+
+            if (!isBinaryTree()) {
+                showModal('Invalid Operation', 'Flatten is only valid for binary trees');
+                return;
+            }
+
+            let prev = null;
+            flattenUtil(root);
+
+            function flattenUtil(node) {
+                if (!node) return;
+
+                const rightChild = appState.adjList[node]?.[1] || null;
+                const leftChild = appState.adjList[node]?.[0] || null;
+
+                if (prev) {
+                    appState.adjList[prev] = [node];
+                }
+                prev = node;
+
+                if (leftChild) flattenUtil(leftChild);
+                if (rightChild) flattenUtil(rightChild);
+            }
+
+            buildTreeVis();
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">TREE FLATTENED</div>
+                <div>The tree has been flattened to a linked list</div>
+            `;
+            addHistory(`Flattened the tree to a linked list`);
+        }
+
+        /**
+         * Prunes a subtree from the tree
+         */
+        function pruneTree() {
+            const node = prompt("Enter node to prune (subtree will be removed):", Object.keys(appState.adjList)[0]);
+            if (!node || !appState.network.body.data.nodes.get(node)) {
+                showModal('Error', 'Invalid node');
+                return;
+            }
+
+            // Remove the subtree
+            removeSubtree(node);
+
+            buildTreeVis();
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">TREE PRUNED</div>
+                <div>Subtree rooted at ${node} has been removed</div>
+            `;
+            addHistory(`Pruned subtree at node ${node}`);
+        }
+
+        /**
+         * Removes a subtree from the tree
+         * @param {string} node - Root of the subtree to remove
+         */
+        function removeSubtree(node) {
+            if (!node) return;
+
+            // First remove all children recursively
+            appState.adjList[node]?.forEach(child => removeSubtree(child));
+
+            // Then remove the node itself from adjList
+            delete appState.adjList[node];
+
+            // Remove the node from its parent's children
+            const parent = findParent(node);
+            if (parent) {
+                appState.adjList[parent] = appState.adjList[parent].filter(child => child !== node);
+            }
+        }
+
+        /**
+         * Calculates and displays the lowest common ancestor of two nodes
+         */
+        function calculateLCA() {
+            const n1 = prompt("Enter first node:", Object.keys(appState.adjList)[0]);
+            const n2 = prompt("Enter second node:", Object.keys(appState.adjList)[1]);
+
+            if (!n1 || !n2 || !appState.network.body.data.nodes.get(n1) || !appState.network.body.data.nodes.get(n2)) {
+                showModal('Error', 'Invalid nodes');
+                return;
+            }
+
+            const root = findRoot();
+            const lca = root ? findLCA(root, n1, n2) : null;
+
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">LOWEST COMMON ANCESTOR</div>
+                <div>LCA(${n1}, ${n2}) = ${lca || 'Not found'}</div>
+            `;
+
+            if (lca) {
+                highlightNode(lca);
+                addHistory(`Found LCA of ${n1} and ${n2}: ${lca}`);
+            } else {
+                addHistory(`No LCA found for ${n1} and ${n2}`);
+            }
+        }
+
+        /**
+         * Finds the lowest common ancestor of two nodes
+         */
+        function findLCA(node, n1, n2) {
+            if (!node) return null;
+            if (node === n1 || node === n2) return node;
+
+            const children = appState.adjList[node] || [];
+            const found = children.map(child => findLCA(child, n1, n2)).filter(x => x);
+
+            if (found.length === 2) return node;
+            return found[0] || null;
+        }
+
+        /**
+         * Finds and displays the path between two nodes
+         */
+        function findPath() {
+            const start = prompt("Enter start node:", Object.keys(appState.adjList)[0]);
+            const end = prompt("Enter end node:", Object.keys(appState.adjList)[1]);
+
+            if (!start || !end || !appState.network.body.data.nodes.get(start) || !appState.network.body.data.nodes.get(end)) {
+                showModal('Error', 'Invalid nodes');
+                return;
+            }
+
+            const path = findPathUtil(start, end);
+
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">PATH BETWEEN NODES</div>
+                <div>Path from ${start} to ${end}: ${path.length > 0 ? path.join(' → ') : 'No path exists'}</div>
+            `;
+
+            if (path.length > 0) {
+                animatePath(path);
+                addHistory(`Found path from ${start} to ${end}`);
+            } else {
+                addHistory(`No path found from ${start} to ${end}`);
+            }
+        }
+
+        /**
+         * Finds the path between two nodes
+         */
+        function findPathUtil(start, end) {
+            // Simple BFS to find path
+            const queue = [[start]];
+            const visited = new Set();
+
+            while (queue.length > 0) {
+                const path = queue.shift();
+                const node = path[path.length - 1];
+
+                if (node === end) return path;
+
+                if (!visited.has(node)) {
+                    visited.add(node);
+
+                    // Check parent
+                    const parent = findParent(node);
+                    if (parent && !visited.has(parent)) {
+                        queue.push([...path, parent]);
+                    }
+
+                    // Check children
+                    const children = appState.adjList[node] || [];
+                    for (const child of children) {
+                        if (!visited.has(child)) {
+                            queue.push([...path, child]);
+                        }
+                    }
+                }
+            }
+
+            return [];
+        }
+
+        /**
+         * Animates a path through the tree
+         * @param {array} path - Array of node IDs in the path
+         */
+        function animatePath(path) {
+            // Reset all nodes and edges
+            resetTreeAppearance();
+
+            // Highlight path nodes and edges
+            path.forEach(node => {
+                updateNodeAppearance(node, {
+                    background: '#f59e0b',
+                    border: '#d97706'
+                });
+            });
+
+            for (let i = 0; i < path.length - 1; i++) {
+                const from = path[i];
+                const to = path[i + 1];
+
+                // Check if edge exists in either direction
+                let edgeId = `${from}->${to}`;
+                if (!appState.network.body.data.edges.get(edgeId)) {
+                    edgeId = `${to}->${from}`;
+                }
+
+                if (appState.network.body.data.edges.get(edgeId)) {
+                    updateEdgeAppearance(edgeId, {
+                        color: '#f59e0b',
+                        width: 3
+                    });
+                }
+            }
+
+            // Focus on the path
+            appState.network.fit({
+                nodes: path,
+                animation: {
+                    duration: 1000,
+                    easingFunction: 'easeInOutQuad'
+                }
+            });
+        }
+
+        /**
+         * Calculates and displays the tree diameter
+         */
+        function findDiameter() {
+            const root = findRoot();
+            if (!root) {
+                showModal('Error', 'No tree loaded');
+                return;
+            }
+
+            let diameter = 0;
+
+            function height(node) {
+                if (!node) return 0;
+
+                const leftHeight = height(appState.adjList[node]?.[0]);
+                const rightHeight = height(appState.adjList[node]?.[1]);
+
+                diameter = Math.max(diameter, leftHeight + rightHeight);
+                return 1 + Math.max(leftHeight, rightHeight);
+            }
+
+            height(root);
+
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">TREE DIAMETER</div>
+                <div>The diameter (longest path) of the tree is ${diameter}</div>
+            `;
+            addHistory(`Calculated tree diameter: ${diameter}`);
+        }
+
+        /**
+         * Calculates and displays the maximum path sum
+         */
+        function findMaxPathSum() {
+            const root = findRoot();
+            if (!root) {
+                showModal('Error', 'No tree loaded');
+                return;
+            }
+
+            let maxSum = -Infinity;
+
+            function maxPathSum(node) {
+                if (!node) return 0;
+
+                const num = parseFloat(node);
+                if (isNaN(num)) {
+                    showModal('Error', 'Node values must be numeric for path sum calculation');
+                    throw new Error("Non-numeric node value");
+                }
+
+                const leftSum = Math.max(0, maxPathSum(appState.adjList[node]?.[0]));
+                const rightSum = Math.max(0, maxPathSum(appState.adjList[node]?.[1]));
+
+                maxSum = Math.max(maxSum, num + leftSum + rightSum);
+                return num + Math.max(leftSum, rightSum);
+            }
+
+            maxPathSum(root);
+
+            appState.cachedElements.operationResult.innerHTML = `
+                <div class="font-bold text-teal-300 mb-1">MAXIMUM PATH SUM</div>
+                <div>The maximum path sum in the tree is ${maxSum}</div>
+            `;
+            addHistory(`Calculated maximum path sum: ${maxSum}`);
+        }
+
+        /**
+         * Exports the tree visualization as PNG
+         */
+        function exportPNG() {
+            html2canvas(appState.cachedElements.treeVis).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'tree-visualization.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                addHistory(`Exported tree as PNG`);
+            });
+        }
+
+        /**
+         * Exports the tree data as JSON
+         */
+        function exportJSON() {
+            const data = {
+                adjacencyList: appState.adjList,
+                nodes: appState.network.body.data.nodes.get(),
+                edges: appState.network.body.data.edges.get(),
+                metadata: {
+                    exportedAt: new Date().toISOString(),
+                    nodeCount: appState.network.body.data.nodes.length,
+                    treeType: appState.cachedElements.treeType.textContent
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.download = 'tree-data.json';
+            link.href = URL.createObjectURL(blob);
+            link.click();
+            addHistory(`Exported tree as JSON`);
+        }
+
+        /**
+         * Fits the tree visualization to the view
+         */
+        function fitView() {
+            if (appState.network) {
+                appState.network.fit({
+                    animation: {
+                        duration: 1000,
+                        easingFunction: 'easeInOutQuad'
+                    }
+                });
+                addHistory(`Fitted tree to view`);
+            }
+        }
+
+        /**
+         * Adds an entry to the history log
+         * @param {string} message - Message to add to history
+         */
+        function addHistory(message) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const historyLog = appState.cachedElements.historyLog;
+            const entry = document.createElement('div');
+            entry.className = 'py-2 border-b border-gray-700 fade-in';
+            entry.textContent = `[${timeString}] ${message}`;
+            historyLog.insertBefore(entry, historyLog.firstChild);
+
+            // Limit history to 50 entries
+            if (historyLog.children.length > 50) {
+                historyLog.removeChild(historyLog.lastChild);
+            }
+        }
+    </script>
+</body>
+
+</html>
